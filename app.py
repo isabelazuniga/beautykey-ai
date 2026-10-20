@@ -1,49 +1,59 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="BeautyKey AI", page_icon="✨", layout="wide")
+st.set_page_config(
+    page_title="BeautyKey | Retail Intelligence",
+    page_icon="✦",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# ---------- PREMIUM BEAUTY-TECH DESIGN ----------
+# ---------- DESIGN SYSTEM ----------
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+
 :root {
-    --ivory: #FAF7F3;
-    --rose: #80515B;
-    --plum: #493640;
-    --muted: #806D76;
-    --border: #EADFD9;
+ --ink:#3F303A; --plum:#634653; --rose:#A87885;
+ --ivory:#F8F5F1; --paper:#FFFFFF; --muted:#8C7D83;
+ --line:#E9E0DB; --green:#397966;
 }
-.stApp { background: var(--ivory); color: var(--plum); }
-.block-container { padding-top: 2.2rem; padding-bottom: 3rem; max-width: 1500px; }
-h1, h2, h3 { color: var(--plum) !important; letter-spacing: -0.45px; }
-h1 { font-weight: 760 !important; }
-[data-testid="stMetric"] {
-    background: white; border: 1px solid var(--border);
-    padding: 20px 18px; border-radius: 16px;
-    box-shadow: 0 3px 12px rgba(73,54,64,.045);
-}
-[data-testid="stMetricLabel"] { color: var(--muted) !important; }
-[data-testid="stMetricValue"] { color: var(--plum) !important; font-weight: 700; }
-[data-testid="stSidebar"] { background: #F0E7E2; }
-[data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 { color: var(--plum) !important; }
-.stButton > button {
-    background: var(--rose); color: white; border: 1px solid var(--rose);
-    border-radius: 10px; padding: .55rem 1.15rem; font-weight: 600;
-}
-.stButton > button:hover { background: #65404A; color: white; border-color: #65404A; }
-hr { border-color: var(--border) !important; }
-[data-testid="stPlotlyChart"], [data-testid="stDataFrame"] { border-radius: 12px; }
-.bk-eyebrow { color: #92766F; font-size: 12px; letter-spacing: 2.2px; font-weight: 700; }
-.bk-disclaimer {
-    background: #F0E7E2; border: 1px solid #E4D3CC;
-    border-left: 4px solid #80515B; padding: 14px 17px;
-    border-radius: 10px; color: #59454E; font-size: 13px;
-    line-height: 1.55; margin: 12px 0 22px 0;
-}
+html, body, [class*="css"] {font-family:'DM Sans',sans-serif;}
+.stApp {background:var(--ivory); color:var(--ink);}
+.block-container {max-width:1500px;padding-top:1.7rem;padding-bottom:3rem;}
+[data-testid="stSidebar"] {background:#F0E8E3;border-right:1px solid #E4D8D2;}
+h1,h2,h3 {color:var(--ink)!important;letter-spacing:-.4px;}
+h1 {font-family:'Playfair Display',serif!important;font-weight:600!important;font-size:2.45rem!important;}
+h2 {font-size:1.35rem!important;font-weight:700!important;}
+h3 {font-size:1.05rem!important;font-weight:700!important;}
+.bk-brand {display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.bk-mark {width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:#F8F0E9;background:var(--plum);font-size:23px;}
+.bk-wordmark {font-family:'Playfair Display',serif;font-size:24px;font-weight:600;color:var(--ink);line-height:1.05;}
+.bk-subbrand {color:var(--muted);font-size:9px;letter-spacing:1.7px;font-weight:700;margin-top:5px;}
+.bk-eyebrow {font-size:10px;letter-spacing:2px;color:var(--rose);font-weight:700;text-transform:uppercase;}
+.bk-hero {background:linear-gradient(115deg,#F0E6E1 0%,#F8F5F1 70%);border:1px solid var(--line);border-radius:20px;padding:25px 28px;margin:12px 0 20px 0;}
+.bk-hero-title {font-family:'Playfair Display',serif;font-size:30px;line-height:1.2;color:var(--ink);margin:6px 0 8px 0;}
+.bk-hero-copy {color:#786970;font-size:13px;max-width:680px;line-height:1.65;}
+.bk-pill {display:inline-block;background:#E5D5D5;color:#694955;border-radius:20px;padding:6px 10px;font-size:10px;font-weight:700;letter-spacing:.6px;}
+.bk-card {background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 20px;min-height:125px;box-shadow:0 3px 14px rgba(63,48,58,.025);}
+.bk-kpi-label {font-size:10px;letter-spacing:1.2px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+.bk-kpi-value {font-size:29px;font-weight:700;letter-spacing:-1px;color:var(--ink);margin:8px 0 5px 0;}
+.bk-kpi-note {font-size:11px;color:var(--muted);}
+.bk-section-title {font-weight:700;font-size:15px;color:var(--ink);margin-bottom:3px;}
+.bk-section-sub {color:var(--muted);font-size:11px;margin-bottom:14px;}
+.bk-callout {background:#F3E9E8;border-left:3px solid var(--rose);border-radius:8px;padding:14px 16px;color:#59434D;font-size:12px;line-height:1.65;}
+.bk-disclaimer {color:#94858A;font-size:10px;line-height:1.6;border-top:1px solid var(--line);padding-top:15px;margin-top:25px;}
+[data-testid="stMetric"] {background:#fff;border:1px solid var(--line);padding:16px 18px;border-radius:15px;}
+[data-testid="stMetricLabel"] {color:var(--muted)!important;font-size:11px!important;}
+[data-testid="stMetricValue"] {color:var(--ink)!important;font-weight:700;}
+.stButton>button {border-radius:9px;border:1px solid var(--plum);background:var(--plum);color:white;font-weight:600;padding:.55rem 1rem;}
+.stButton>button:hover {background:#4D3642;color:white;border-color:#4D3642;}
+[data-testid="stTabs"] [role="tab"] {color:var(--muted);font-weight:600;padding:10px 14px;}
+[data-testid="stTabs"] [aria-selected="true"] {color:var(--plum)!important;border-bottom-color:var(--rose)!important;}
+hr {border-color:var(--line)!important;}
+[data-testid="stDataFrame"] {border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+@media(max-width:800px) {.bk-hero-title{font-size:24px;}.bk-kpi-value{font-size:23px;}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -53,7 +63,7 @@ DEMO_DATA = [
     {"Retail Account":"Douglas Spain","Account Type":"Prestige beauty","Monthly Target (€)":40000,"Current Month Sales (€)":43200,"Previous Month Sales (€)":40500,"Stock Cover (weeks)":4,"Hero SKU":"Barrier Repair Cream","Hero SKU Sales Growth (%)":0.07,"Promotion Planned?":"Yes","Account Notes":"Above target; opportunity to protect momentum and expand hero SKU."},
     {"Retail Account":"Lookfantastic Spain","Account Type":"Online beauty retailer","Monthly Target (€)":30000,"Current Month Sales (€)":24600,"Previous Month Sales (€)":27000,"Stock Cover (weeks)":2.5,"Hero SKU":"Retinol Night Serum","Hero SKU Sales Growth (%)":0.038,"Promotion Planned?":"No","Account Notes":"Sales declined versus previous month; investigate traffic, conversion, and assortment."},
     {"Retail Account":"El Corte Inglés Beauty","Account Type":"Department store","Monthly Target (€)":36000,"Current Month Sales (€)":32400,"Previous Month Sales (€)":31800,"Stock Cover (weeks)":5,"Hero SKU":"Hydrating Cleanser","Hero SKU Sales Growth (%)":0.065,"Promotion Planned?":"Yes","Account Notes":"Near target with positive growth; planned promotion needs ROI review."},
-    {"Retail Account":"Primor","Account Type":"Beauty specialist","Monthly Target (€)":45000,"Current Month Sales (€)":40500,"Previous Month Sales (€)":38200,"Stock Cover (weeks)":2,"Hero SKU":"SPF 50 Fluid","Hero SKU Sales Growth (%)":0.025,"Promotion Planned?":"No","Account Notes":"Largest absolute target gap among specialist accounts; stock cover is tight."},
+    {"Retail Account":"Primor","Account Type":"Beauty specialist","Monthly Target (€)":45000,"Current Month Sales (€)":40500,"Previous Month Sales (€)":38200,"Stock Cover (weeks)":2,"Hero SKU":"SPF 50 Fluid","Hero SKU Sales Growth (%)":0.025,"Promotion Planned?":"No","Account Notes":"Large target gap among specialist accounts; stock cover is tight."},
     {"Retail Account":"Druni","Account Type":"Beauty specialist","Monthly Target (€)":28000,"Current Month Sales (€)":29400,"Previous Month Sales (€)":27600,"Stock Cover (weeks)":6,"Hero SKU":"Vitamin C Serum","Hero SKU Sales Growth (%)":0.085,"Promotion Planned?":"No","Account Notes":"Above target with strong growth; potential for cross-sell and replenishment."},
     {"Retail Account":"Perfume's Club","Account Type":"Online beauty retailer","Monthly Target (€)":22000,"Current Month Sales (€)":17600,"Previous Month Sales (€)":19000,"Stock Cover (weeks)":3,"Hero SKU":"Retinol Night Serum","Hero SKU Sales Growth (%)":0.05,"Promotion Planned?":"Yes","Account Notes":"Below target and declining; assess whether planned promotion can recover sales."},
     {"Retail Account":"Marionnaud Spain","Account Type":"Prestige beauty","Monthly Target (€)":25000,"Current Month Sales (€)":23750,"Previous Month Sales (€)":23000,"Stock Cover (weeks)":4,"Hero SKU":"Barrier Repair Cream","Hero SKU Sales Growth (%)":0.045,"Promotion Planned?":"No","Account Notes":"Close to target; opportunity to improve merchandising and staff education."},
@@ -64,384 +74,442 @@ REQUIRED = [
     "Previous Month Sales (€)", "Stock Cover (weeks)"
 ]
 
-def prepare(df):
-    df = df.copy()
-    numeric = [
+def prepare_data(frame):
+    frame = frame.copy()
+    frame = frame.rename(columns={
+        "Current Net Sales (€)": "Current Month Sales (€)",
+        "Net Sales (€)": "Current Month Sales (€)",
+        "Hero SKU Growth (%)": "Hero SKU Sales Growth (%)",
+        "Priority Notes": "Account Notes"
+    })
+
+    for col in [
         "Monthly Target (€)", "Current Month Sales (€)",
         "Previous Month Sales (€)", "Stock Cover (weeks)",
         "Hero SKU Sales Growth (%)"
-    ]
-    for col in numeric:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-    df["Sales Growth (%)"] = (
-        df["Current Month Sales (€)"] /
-        df["Previous Month Sales (€)"].replace(0, float("nan")) - 1
-    )
-    df["Target Attainment (%)"] = (
-        df["Current Month Sales (€)"] /
-        df["Monthly Target (€)"].replace(0, float("nan"))
-    )
-    df["Gap to Target (€)"] = (
-        df["Monthly Target (€)"] - df["Current Month Sales (€)"]
-    )
-    return df
+    ]:
+        if col in frame.columns:
+            frame[col] = pd.to_numeric(frame[col], errors="coerce")
 
-def money(value):
-    return f"€{value:,.0f}" if pd.notna(value) else "—"
+    missing = [col for col in REQUIRED if col not in frame.columns]
+    if missing:
+        return None, missing
 
-def pct(value):
-    return f"{value:.1%}" if pd.notna(value) else "—"
+    frame["Sales Growth (%)"] = (
+        frame["Current Month Sales (€)"] /
+        frame["Previous Month Sales (€)"].replace(0, float("nan")) - 1
+    )
+    frame["Target Attainment (%)"] = (
+        frame["Current Month Sales (€)"] /
+        frame["Monthly Target (€)"].replace(0, float("nan"))
+    )
+    frame["Gap to Target (€)"] = (
+        frame["Monthly Target (€)"] - frame["Current Month Sales (€)"]
+    )
+    return frame, []
 
-def recommend(row):
+def money(x):
+    return f"€{x:,.0f}" if pd.notna(x) else "—"
+
+def percent(x):
+    return f"{x:+.1%}" if pd.notna(x) else "—"
+
+def pct_plain(x):
+    return f"{x:.1%}" if pd.notna(x) else "—"
+
+def next_step(row):
     gap = row["Gap to Target (€)"]
     growth = row["Sales Growth (%)"]
     stock = row["Stock Cover (weeks)"]
 
     if stock < 3:
-        action = "Check inventory and agree replenishment before adding a demand-driving promotion."
-        risk = "Low stock cover may constrain sales recovery."
-    elif growth < 0 and gap > 0:
-        action = "Review traffic, conversion, assortment and promotional mechanics with the retailer."
-        risk = "The reason for the sales decline is not established by this workbook."
-    elif gap > 0 and growth >= 0:
-        action = "Build a targeted recovery plan around the hero SKU; review merchandising and cross-sell."
-        risk = "Margin and incremental-sales data are unavailable to validate promotion ROI."
-    else:
-        action = "Protect momentum and assess selective assortment expansion or cross-sell."
-        risk = "Expansion should be validated against sell-through and margin."
-    return action, risk
+        return "Validate replenishment", "Low stock cover may constrain sales recovery."
+    if growth < 0 and gap > 0:
+        return "Review sales drivers", "The workbook does not identify the cause of the decline."
+    if gap > 0:
+        return "Build a targeted recovery plan", "Validate margin and incremental sales before any promotion."
+    return "Protect momentum and cross-sell", "Validate sell-through and margin before expanding assortment."
 
-# ---------- HEADER AND DISCLAIMER ----------
+# ---------- SIDEBAR / DATA MANAGEMENT ----------
+with st.sidebar:
+    st.markdown("""
+    <div class='bk-brand'>
+      <div class='bk-mark'>✦</div>
+      <div>
+        <div class='bk-wordmark'>BeautyKey</div>
+        <div class='bk-subbrand'>RETAIL INTELLIGENCE</div>
+      </div>
+    </div>
+    <hr>
+    <div class='bk-eyebrow'>WORKSPACE</div>
+    """, unsafe_allow_html=True)
+
+    reporting_period = st.text_input("Reporting period", "September 2026")
+    uploaded_file = st.file_uploader("Refresh account data (.xlsx)", type=["xlsx"])
+    st.caption("Monthly workflow: upload the refreshed workbook to start a new analysis.")
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("**Data status**")
+
+    if uploaded_file:
+        st.success("Workbook selected")
+    else:
+        st.info("Using fictional demonstration data")
+
+    st.caption("No automatic data retrieval, CRM updates or emails are enabled.")
+
+# ---------- LOAD DATA ----------
+source = "Fictional demonstration dataset"
+df = pd.DataFrame(DEMO_DATA)
+
+if uploaded_file:
+    try:
+        workbook = pd.ExcelFile(uploaded_file)
+        preferred = (
+            "Account Targets" if "Account Targets" in workbook.sheet_names
+            else "Current Sales" if "Current Sales" in workbook.sheet_names
+            else workbook.sheet_names[0]
+        )
+        sheet_name = st.sidebar.selectbox(
+            "Workbook sheet",
+            workbook.sheet_names,
+            index=workbook.sheet_names.index(preferred)
+        )
+        header = 2 if sheet_name in ["Account Targets", "Current Sales"] else 0
+        uploaded_df = pd.read_excel(uploaded_file, sheet_name=sheet_name, header=header)
+
+        if sheet_name == "Account Targets" and "Current Sales" in workbook.sheet_names:
+            try:
+                sales_sheet = pd.read_excel(uploaded_file, sheet_name="Current Sales", header=2)
+                sales_sheet = sales_sheet.rename(columns={"Net Sales (€)": "Current Month Sales (€)"})
+                if {"Retail Account", "Current Month Sales (€)"}.issubset(sales_sheet.columns):
+                    sums = sales_sheet.groupby("Retail Account", as_index=False)["Current Month Sales (€)"].sum()
+                    uploaded_df = uploaded_df.drop(
+                        columns=["Current Net Sales (€)", "Current Month Sales (€)"],
+                        errors="ignore"
+                    ).merge(sums, on="Retail Account", how="left")
+            except Exception:
+                pass
+
+        df, missing = prepare_data(uploaded_df)
+        if missing:
+            st.sidebar.error("Missing required columns: " + ", ".join(missing))
+            st.stop()
+
+        source = f"Uploaded workbook · {sheet_name}"
+
+    except Exception as exc:
+        st.error(f"Unable to read workbook: {exc}")
+        st.stop()
+
+if df is None:
+    st.stop()
+
+df, missing = prepare_data(df)
+if missing:
+    st.error("Missing required columns: " + ", ".join(missing))
+    st.stop()
+
+df = df.dropna(subset=[
+    "Monthly Target (€)", "Current Month Sales (€)", "Previous Month Sales (€)"
+])
+df = df[df["Monthly Target (€)"] > 0]
+
+if df.empty:
+    st.error("No valid account rows found. Check the uploaded workbook.")
+    st.stop()
+
+# ---------- TRANSPARENT OPPORTUNITY SCORING ----------
+hero_growth = df.get("Hero SKU Sales Growth (%)", pd.Series(0, index=df.index)).fillna(0)
+df["Priority score"] = (
+    (df["Gap to Target (€)"].clip(lower=0) / df["Monthly Target (€)"]) * 0.55
+    + (-df["Sales Growth (%)"]).clip(lower=0) * 0.30
+    + hero_growth.clip(lower=0) * 0.15
+)
+
+actions = df.apply(next_step, axis=1)
+df["Recommended action"] = [a[0] for a in actions]
+df["Risk / unknown"] = [a[1] for a in actions]
+ranked = df.sort_values("Priority score", ascending=False).copy()
+
+# ---------- BRAND HEADER ----------
 st.markdown(
-    "<div class='bk-eyebrow'>COMMERCIAL INTELLIGENCE</div>",
+    "<div class='bk-eyebrow'>COMMERCIAL PERFORMANCE · ACCOUNT GROWTH</div>",
     unsafe_allow_html=True
 )
-st.title("✨ BeautyKey AI")
-st.caption("AI Key Account Manager for multi-brand beauty retail")
 
-st.markdown("""
-<div class="bk-disclaimer">
-<strong>Academic prototype disclaimer</strong><br>
-BeautyKey AI is an educational prototype developed for an academic project.
-All retailer, sales, product and performance data are fictional and created
-for demonstration purposes. The prototype is not affiliated with or
-endorsed by any real company.
+header_left, header_right = st.columns([4, 1])
+with header_left:
+    st.title("BeautyKey Intelligence")
+    st.markdown(
+        "Portfolio performance, account opportunities and recommended next actions — in one workspace."
+    )
+with header_right:
+    st.markdown(
+        "<div style='text-align:right;padding-top:18px'><span class='bk-pill'>ACADEMIC DEMO</span></div>",
+        unsafe_allow_html=True
+    )
+
+st.markdown(f"""
+<div class='bk-hero'>
+  <div class='bk-eyebrow'>YOUR PORTFOLIO AT A GLANCE</div>
+  <div class='bk-hero-title'>Clarity for your next commercial move.</div>
+  <div class='bk-hero-copy'>
+    Review performance against target, identify accounts that may need attention,
+    and turn the data into practical next steps.
+    <b>Reporting period:</b> {reporting_period} &nbsp; · &nbsp;
+    <b>Source:</b> {source}
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ---------- REPORTING WORKSPACE ----------
-with st.sidebar:
-    st.header("Reporting workspace")
-    uploaded = st.file_uploader(
-        "Upload the updated Excel workbook",
-        type=["xlsx"]
-    )
-    period = st.text_input(
-        "Reporting period",
-        value="Demo period — replace with actual month"
-    )
-    st.info(
-        "Monthly workflow: a human uploads the refreshed workbook and starts "
-        "the analysis. This prototype does not automatically retrieve data or send reports."
-    )
-    st.markdown("**Data source**")
-    st.caption("Uploaded workbook, or the embedded fictional demo dataset.")
+# ---------- EXECUTIVE KPIs ----------
+sales_total = df["Current Month Sales (€)"].sum()
+previous_total = df["Previous Month Sales (€)"].sum()
+target_total = df["Monthly Target (€)"].sum()
+attainment = sales_total / target_total if target_total else 0
+growth_total = sales_total / previous_total - 1 if previous_total else 0
+positive_gap = df["Gap to Target (€)"].clip(lower=0).sum()
+above = int((df["Gap to Target (€)"] <= 0).sum())
+alerts = int((
+    (df["Stock Cover (weeks)"] < 3) |
+    ((df["Sales Growth (%)"] < 0) & (df["Gap to Target (€)"] > 0))
+).sum())
 
-source = "Embedded fictional demo data"
+kpis = st.columns(4)
+metric_data = [
+    ("NET SALES", money(sales_total), f"{growth_total:+.1%} vs previous period"),
+    ("TARGET ATTAINMENT", pct_plain(attainment), f"{(attainment-1)*100:+.1f} pp vs target"),
+    ("REMAINING TARGET GAP", money(positive_gap), "Sum of positive account-level gaps"),
+    ("ACCOUNTS ABOVE TARGET", f"{above} / {len(df)}", f"{alerts} accounts flagged for review")
+]
 
-if uploaded:
-    try:
-        xl = pd.ExcelFile(uploaded)
-        preferred = (
-            "Account Targets" if "Account Targets" in xl.sheet_names
-            else ("Sales Data" if "Sales Data" in xl.sheet_names else xl.sheet_names[0])
-        )
-        default_index = xl.sheet_names.index(preferred)
-        sheet = st.selectbox(
-            "Select sales sheet",
-            xl.sheet_names,
-            index=default_index
-        )
+for col, (label, value, note) in zip(kpis, metric_data):
+    with col:
+        st.markdown(f"""
+        <div class='bk-card'>
+          <div class='bk-kpi-label'>{label}</div>
+          <div class='bk-kpi-value'>{value}</div>
+          <div class='bk-kpi-note'>{note}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        header_row = 2 if sheet in ["Account Targets", "Current Sales"] else 0
-        raw = pd.read_excel(uploaded, sheet_name=sheet, header=header_row)
-
-        if (
-            sheet == "Account Targets"
-            and {"Retail Account", "Monthly Target (€)",
-                 "Previous Month Sales (€)", "Stock Cover (weeks)"}.issubset(raw.columns)
-            and "Current Sales" in xl.sheet_names
-        ):
-            current = pd.read_excel(uploaded, sheet_name="Current Sales", header=2)
-            if {"Retail Account", "Net Sales (€)"}.issubset(current.columns):
-                aggregations = {"Net Sales (€)": "sum"}
-                if "Previous Month Sales (€)" in current.columns:
-                    aggregations["Previous Month Sales (€)"] = "sum"
-                totals = current.groupby("Retail Account", as_index=False).agg(aggregations)
-
-                raw = raw.drop(
-                    columns=[
-                        "Current Net Sales (€)", "Sales Growth (%)",
-                        "Target Attainment (%)", "Gap to Target (€)"
-                    ],
-                    errors="ignore"
-                )
-                raw = raw.merge(
-                    totals,
-                    on="Retail Account",
-                    how="left",
-                    suffixes=("", "_from_sales")
-                )
-                if "Net Sales (€)" in raw.columns:
-                    raw = raw.rename(columns={"Net Sales (€)": "Current Month Sales (€)"})
-                if "Previous Month Sales (€)_from_sales" in raw.columns:
-                    raw["Previous Month Sales (€)"] = (
-                        raw["Previous Month Sales (€)_from_sales"]
-                        .fillna(raw["Previous Month Sales (€)"])
-                    )
-                    raw = raw.drop(columns=["Previous Month Sales (€)_from_sales"])
-                raw = raw.rename(columns={
-                    "Hero SKU Growth (%)": "Hero SKU Sales Growth (%)",
-                    "Priority Notes": "Account Notes"
-                })
-        else:
-            raw = raw.rename(columns={
-                "Current Net Sales (€)": "Current Month Sales (€)",
-                "Net Sales (€)": "Current Month Sales (€)",
-                "Hero SKU Growth (%)": "Hero SKU Sales Growth (%)",
-                "Priority Notes": "Account Notes"
-            })
-
-        missing = [col for col in REQUIRED if col not in raw.columns]
-        if missing:
-            st.error(
-                "The selected sheet is missing required columns: "
-                + ", ".join(missing)
-                + ". For the complete BeautyKey database, select 'Account Targets'."
-            )
-            st.stop()
-
-        df = raw
-        source = f"Uploaded workbook · {sheet}"
-
-    except Exception as error:
-        st.error(f"Could not read workbook: {error}")
-        st.stop()
-else:
-    df = pd.DataFrame(DEMO_DATA)
-
-df = prepare(df)
-
-if df["Retail Account"].duplicated().any():
-    st.warning("Duplicate retailer names detected. Check whether these are separate records.")
-
-if df[REQUIRED].isna().any().any():
-    st.warning("Some required values are missing or non-numeric. Check the workbook.")
-
-if (df["Monthly Target (€)"] <= 0).any():
-    st.warning("Targets must be greater than zero for reliable target-attainment calculations.")
-
-valid = df.dropna(subset=[
-    "Monthly Target (€)", "Current Month Sales (€)",
-    "Previous Month Sales (€)"
+# ---------- PRODUCT NAVIGATION ----------
+t_overview, t_accounts, t_opportunities, t_assistant, t_data = st.tabs([
+    "Overview", "Account intelligence", "Growth opportunities",
+    "AI workspace", "Data & methodology"
 ])
-valid = valid[valid["Monthly Target (€)"] > 0]
 
-if valid.empty:
-    st.error("No valid account records are available. Please check the uploaded workbook.")
-    st.stop()
-
-target = valid["Monthly Target (€)"].sum()
-sales = valid["Current Month Sales (€)"].sum()
-prev = valid["Previous Month Sales (€)"].sum()
-gap = valid["Gap to Target (€)"].clip(lower=0).sum()
-attainment = sales / target if target else 0
-growth = sales / prev - 1 if prev else 0
-
-st.markdown(
-    f"**Period:** {period} &nbsp; · &nbsp; "
-    f"**Source:** {source} &nbsp; · &nbsp; **Accounts:** {len(valid)}"
-)
-
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Current sales", money(sales), f"{growth:+.1%} vs previous month")
-c2.metric("Target attainment", pct(attainment))
-c3.metric("Positive target gaps", money(gap))
-c4.metric(
-    "Accounts above target",
-    f"{(valid['Gap to Target (€)'] <= 0).sum()} / {len(valid)}"
-)
-
-# ---------- DASHBOARD CHARTS ----------
-st.divider()
-left, right = st.columns([1.15, 1])
-
-with left:
-    st.subheader("Account performance")
-    fig = px.bar(
-        valid.sort_values("Target Attainment (%)"),
-        x="Retail Account",
-        y="Target Attainment (%)",
-        color="Target Attainment (%)",
-        hover_data=[
-            "Current Month Sales (€)", "Gap to Target (€)", "Sales Growth (%)"
-        ],
-        labels={
-            "Target Attainment (%)": "Target attainment",
-            "Retail Account": "Retail account"
-        },
-        color_continuous_scale=["#E8D4D1", "#C99EAA", "#80515B", "#493640"]
+with t_overview:
+    st.markdown(
+        "<div class='bk-section-title'>Portfolio performance</div>"
+        "<div class='bk-section-sub'>A high-level view of target delivery and sales momentum.</div>",
+        unsafe_allow_html=True
     )
-    fig.add_hline(
-        y=1, line_dash="dash", line_color="#B89A68",
-        annotation_text="100% target"
-    )
-    fig.update_layout(
-        height=360, margin=dict(l=10, r=10, t=20, b=10),
-        xaxis_tickangle=-25, coloraxis_showscale=False,
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#493640"
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    col1, col2 = st.columns([1.15, 1])
 
-with right:
-    st.subheader("Sales growth vs. target gap")
-    fig2 = px.scatter(
-        valid,
-        x="Sales Growth (%)",
-        y="Gap to Target (€)",
-        size="Current Month Sales (€)",
-        color="Stock Cover (weeks)",
-        hover_name="Retail Account",
-        hover_data=["Target Attainment (%)"],
-        labels={
-            "Sales Growth (%)": "Sales growth vs previous month",
-            "Gap to Target (€)": "Gap to target (€)",
-            "Stock Cover (weeks)": "Stock cover (weeks)"
-        },
-        color_continuous_scale=["#B7DCCB", "#65BFA4", "#2E8D83", "#493640"]
+    with col1:
+        chart_df = df.sort_values("Target Attainment (%)")
+        fig = px.bar(
+            chart_df, x="Retail Account", y="Target Attainment (%)",
+            color="Target Attainment (%)",
+            hover_data=["Current Month Sales (€)", "Gap to Target (€)", "Sales Growth (%)"],
+            color_continuous_scale=["#E8D4D1", "#C99EAA", "#80515B", "#493640"],
+            labels={"Target Attainment (%)": "Target attainment", "Retail Account": "Retail account"}
+        )
+        fig.add_hline(
+            y=1, line_dash="dash", line_color="#B89A68",
+            annotation_text="100% target"
+        )
+        fig.update_layout(
+            height=360, margin=dict(l=8, r=8, t=15, b=8),
+            xaxis_tickangle=-25, coloraxis_showscale=False,
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="DM Sans", color="#3F303A"),
+            yaxis_tickformat=".0%"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        scatter = px.scatter(
+            df, x="Sales Growth (%)", y="Gap to Target (€)",
+            size="Current Month Sales (€)", color="Stock Cover (weeks)",
+            hover_name="Retail Account", hover_data=["Target Attainment (%)"],
+            color_continuous_scale=["#D9E8DF", "#77B9A4", "#397966", "#634653"],
+            labels={
+                "Sales Growth (%)": "Sales growth vs previous period",
+                "Gap to Target (€)": "Gap to target (€)",
+                "Stock Cover (weeks)": "Stock cover (weeks)"
+            }
+        )
+        scatter.add_hline(y=0, line_dash="dash", line_color="#B89A68")
+        scatter.add_vline(x=0, line_dash="dash", line_color="#B89A68")
+        scatter.update_layout(
+            height=360, margin=dict(l=8, r=8, t=15, b=8),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="DM Sans", color="#3F303A")
+        )
+        st.plotly_chart(scatter, use_container_width=True)
+
+    st.markdown(
+        "<div class='bk-section-title'>Recommended management focus</div>"
+        "<div class='bk-section-sub'>Priority signals based on sales gap, momentum and stock-cover data.</div>",
+        unsafe_allow_html=True
     )
-    fig2.add_hline(y=0, line_dash="dash", line_color="#B89A68")
-    fig2.add_vline(x=0, line_dash="dash", line_color="#B89A68")
-    fig2.update_layout(
-        height=360, margin=dict(l=10, r=10, t=20, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#493640"
+    focus = ranked.iloc[0]
+    st.markdown(f"""
+    <div class='bk-callout'>
+      <b>{focus['Retail Account']}</b> is the highest-ranked account for review under
+      the current demo scoring. Sales are {money(focus['Current Month Sales (€)'])},
+      target attainment is {pct_plain(focus['Target Attainment (%)'])}, and stock
+      cover is {focus['Stock Cover (weeks)']:g} weeks.<br><br>
+      <b>Suggested next step:</b> {focus['Recommended action']}.
+      This is a prioritization signal, not a forecast or proof of incremental revenue.
+    </div>
+    """, unsafe_allow_html=True)
+
+with t_accounts:
+    st.markdown(
+        "<div class='bk-section-title'>Account intelligence</div>"
+        "<div class='bk-section-sub'>Compare performance and review the context behind each recommendation.</div>",
+        unsafe_allow_html=True
     )
-    st.plotly_chart(fig2, use_container_width=True)
+    account_options = sorted(df["Retail Account"].dropna().unique().tolist())
+    selected_account = st.selectbox("Select an account", account_options)
+    account = df[df["Retail Account"] == selected_account].iloc[0]
 
-# ---------- RANKED OPPORTUNITIES ----------
-st.divider()
-st.subheader("Ranked commercial opportunities")
+    a1, a2, a3, a4 = st.columns(4)
+    a1.metric("Current sales", money(account["Current Month Sales (€)"]))
+    a2.metric("Target attainment", pct_plain(account["Target Attainment (%)"]))
+    a3.metric("Sales growth", percent(account["Sales Growth (%)"]))
+    a4.metric("Stock cover", f"{account['Stock Cover (weeks)']:g} weeks")
 
-ranked = valid.copy()
-ranked["Priority signal"] = ranked.apply(
-    lambda r: (
-        (max(r["Gap to Target (€)"], 0) / max(r["Monthly Target (€)"], 1)) * 0.45
-        + max(-r["Sales Growth (%)"], 0) * 0.35
-        + max(r.get("Hero SKU Sales Growth (%)", 0) or 0, 0) * 0.20
-    ),
-    axis=1
-)
-ranked = ranked.sort_values("Priority signal", ascending=False)
+    st.markdown("### Account review")
+    st.write(
+        f"**Account type:** {account.get('Account Type', 'Not provided')} · "
+        f"**Hero SKU:** {account.get('Hero SKU', 'Not provided')}"
+    )
+    st.write(
+        f"**Target:** {money(account['Monthly Target (€)'])} · "
+        f"**Gap to target:** {money(account['Gap to Target (€)'])}"
+    )
+    st.write(f"**Account context:** {account.get('Account Notes', 'No notes supplied.')}")
+    st.markdown(f"""
+    <div class='bk-callout'>
+      <b>Recommended next action</b><br>{account['Recommended action']}<br><br>
+      <b>Risk / unknown</b><br>{account['Risk / unknown']}
+    </div>
+    """, unsafe_allow_html=True)
 
-rows = []
-for i, (_, row) in enumerate(ranked.iterrows(), 1):
-    action, risk = recommend(row)
-    rows.append({
-        "Rank": i,
-        "Retail account": row["Retail Account"],
-        "Sales": money(row["Current Month Sales (€)"]),
-        "Target attainment": pct(row["Target Attainment (%)"]),
-        "Gap": money(row["Gap to Target (€)"]),
-        "Growth": pct(row["Sales Growth (%)"]),
-        "Stock cover": f"{row['Stock Cover (weeks)']:g} weeks",
-        "Recommended next step": action,
-        "Main risk": risk
+with t_opportunities:
+    st.markdown(
+        "<div class='bk-section-title'>Growth opportunities</div>"
+        "<div class='bk-section-sub'>A transparent prioritization heuristic for deciding which accounts to review first.</div>",
+        unsafe_allow_html=True
+    )
+    st.caption(
+        "Priority score combines positive target gap relative to target, negative sales growth, "
+        "and positive hero-SKU growth. It is illustrative, not statistically validated."
+    )
+
+    opportunity_table = ranked[[
+        "Retail Account", "Current Month Sales (€)", "Monthly Target (€)",
+        "Target Attainment (%)", "Gap to Target (€)", "Sales Growth (%)",
+        "Stock Cover (weeks)", "Recommended action"
+    ]].copy()
+
+    opportunity_table = opportunity_table.rename(columns={
+        "Retail Account": "Account",
+        "Current Month Sales (€)": "Sales (€)",
+        "Monthly Target (€)": "Target (€)",
+        "Target Attainment (%)": "Attainment",
+        "Gap to Target (€)": "Gap (€)",
+        "Sales Growth (%)": "Growth",
+        "Stock Cover (weeks)": "Stock (weeks)",
+        "Recommended action": "Recommended next step"
     })
 
-st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-st.caption(
-    "The ranking is a transparent demo heuristic, not a validated forecasting model. "
-    "Review account context and data quality before taking action."
-)
+    st.dataframe(opportunity_table, use_container_width=True, hide_index=True)
+    st.download_button(
+        "Export opportunity review (CSV)",
+        opportunity_table.to_csv(index=False).encode("utf-8"),
+        file_name="beautykey_opportunity_review.csv",
+        mime="text/csv"
+    )
 
-# ---------- COMMERCIAL ASSISTANT ----------
-st.divider()
-st.subheader("✨ BeautyKey AI · Commercial assistant")
-st.caption(
-    "Prototype mode: responses use the uploaded table and transparent rules. "
-    "A production LLM connection would be required for free-form AI reasoning."
-)
+with t_assistant:
+    st.markdown(
+        "<div class='bk-section-title'>BeautyKey assistant</div>"
+        "<div class='bk-section-sub'>Turn account data into structured next steps using transparent rules.</div>",
+        unsafe_allow_html=True
+    )
 
-question = st.selectbox(
-    "Choose a demo task",
-    [
-        "Explain the top three account opportunities",
-        "Create a 30-day action plan for the highest-priority account",
-        "Draft a business review email",
-        "Should we run a promotion next month?"
-    ]
-)
+    task = st.selectbox("What would you like to prepare?", [
+        "Summarize the top three opportunities",
+        "Build a 30-day action plan",
+        "Draft a retailer business-review email",
+        "Assess whether to run a promotion"
+    ])
+    chosen = st.selectbox(
+        "Account context",
+        ["Highest-priority account"] + sorted(df["Retail Account"].unique().tolist())
+    )
+    target_row = ranked.iloc[0] if chosen == "Highest-priority account" else df[df["Retail Account"] == chosen].iloc[0]
 
-if st.button("Generate recommendation", type="primary"):
-    top = ranked.head(3)
+    if st.button("Generate account brief", key="assistant_generate"):
+        if task == "Summarize the top three opportunities":
+            for _, row in ranked.head(3).iterrows():
+                st.markdown(
+                    f"**{row['Retail Account']}** · {money(row['Current Month Sales (€)'])} sales · "
+                    f"{pct_plain(row['Target Attainment (%)'])} target attainment · "
+                    f"{money(row['Gap to Target (€)'])} gap"
+                )
+                st.write(
+                    f"Next step: {row['Recommended action']}. "
+                    f"Unknown to validate: {row['Risk / unknown']}"
+                )
 
-    if question == "Explain the top three account opportunities":
-        st.markdown("### Top opportunity signals")
-        for _, row in top.iterrows():
-            action, risk = recommend(row)
-            st.markdown(
-                f"**{row['Retail Account']}** — sales "
-                f"{money(row['Current Month Sales (€)'])}, target attainment "
-                f"{pct(row['Target Attainment (%)'])}, target gap "
-                f"{money(row['Gap to Target (€)'])}, month-on-month growth "
-                f"{pct(row['Sales Growth (%)'])}, stock cover "
-                f"{row['Stock Cover (weeks)']:g} weeks."
+        elif task == "Build a 30-day action plan":
+            st.markdown(f"### 30-day action plan · {target_row['Retail Account']}")
+            st.write(
+                f"**Evidence:** sales {money(target_row['Current Month Sales (€)'])}; "
+                f"target {money(target_row['Monthly Target (€)'])}; "
+                f"attainment {pct_plain(target_row['Target Attainment (%)'])}; "
+                f"stock cover {target_row['Stock Cover (weeks)']:g} weeks."
             )
-            st.write(f"Suggested next step: {action} **Risk / unknown:** {risk}")
+            st.markdown("""
+            **Days 1–5 · Validate**
+            - Confirm the latest sales and target data.
+            - Check stock on hand, sell-through and missing retailer context.
+            
+            **Days 6–15 · Align**
+            """)
+            st.write(f"- {target_row['Recommended action']}.")
+            st.markdown("""
+            - Agree the account owner, retailer contact and measurable next step.
 
-    elif question == "Create a 30-day action plan for the highest-priority account":
-        row = top.iloc[0]
-        action, risk = recommend(row)
-        st.markdown(f"### 30-day plan · {row['Retail Account']}")
-        st.write(
-            f"**Evidence:** target gap {money(row['Gap to Target (€)'])}; "
-            f"sales growth {pct(row['Sales Growth (%)'])}; "
-            f"stock cover {row['Stock Cover (weeks)']:g} weeks; "
-            f"hero SKU: {row.get('Hero SKU', 'not supplied')}."
-        )
-        st.write(
-            f"**Days 1–5 · Account manager:** validate sales, stock and retailer context. "
-            f"**Days 6–15 · KAM + supply team:** {action} "
-            f"**Days 16–23 · Account manager + retailer:** agree the feasible action and owner. "
-            f"**Days 24–30 · KAM:** review sales, stock and target attainment versus baseline."
-        )
-        st.write(
-            "**Objective:** close part of the evidenced target gap without making "
-            "unsupported profitability claims. **KPIs:** sales, target attainment, "
-            "stock cover and hero SKU sales. **Additional data needed:** sell-through, "
-            "stock on hand, margin, promotional cost and retailer traffic/conversion."
-        )
-        st.write(f"**Main risk:** {risk}")
+            **Days 16–23 · Execute**
+            - Coordinate agreed assortment, replenishment, merchandising or communication actions.
+            - Do not commit promotional spend until margin and incremental impact are assessed.
 
-    elif question == "Draft a business review email":
-        row = top.iloc[0]
-        email = f"""Subject: Business review and growth opportunities — {row['Retail Account']}
+            **Days 24–30 · Review**
+            - Compare sales, target attainment, stock cover and hero-SKU performance with baseline.
+            - Document outcomes, learnings and follow-up owner.
+            """)
+            st.info("Suggested workflow only. Dates, owners and commercial commitments require human confirmation.")
+
+        elif task == "Draft a retailer business-review email":
+            email = f"""Subject: Business review and growth opportunities — {target_row['Retail Account']}
 
 Hi [Contact Name],
 
 I hope you are well. I would like to arrange a short business review to discuss recent performance and identify practical opportunities for the coming month.
 
-Our current reporting shows sales of {money(row['Current Month Sales (€)'])} against a target of {money(row['Monthly Target (€)'])}. I would welcome the opportunity to review the drivers together.
+Our current reporting shows sales of {money(target_row['Current Month Sales (€)'])} against a target of {money(target_row['Monthly Target (€)'])}. I would welcome the opportunity to review the drivers together.
 
 Suggested agenda:
 • Review sales performance and target progress
 • Discuss hero SKU trends, availability and replenishment
-• Review planned commercial activity and the information needed to assess its effectiveness
+• Review planned commercial activity and the data needed to assess its effectiveness
 • Agree next steps, owners and KPIs
 
 Would [proposed date/time] work for you?
@@ -449,41 +517,64 @@ Would [proposed date/time] work for you?
 Best regards,
 [Your Name]
 [Title]"""
-        st.markdown(f"### Draft email · {row['Retail Account']}")
-        st.code(email, language="text")
-        st.caption("Draft only. Review the figures, contact details and tone before sending.")
-
-    else:
-        st.markdown("### Promotion decision: more evidence needed")
-        st.write(
-            "The workbook can identify sales gaps and stock constraints, but it cannot "
-            "establish whether a promotion will be profitable."
-        )
-        st.write(
-            "Before approving spend, obtain gross margin, promotional funding and costs, "
-            "expected incremental sell-through, baseline sales, stock on hand, retailer "
-            "media/placement details, and a method to estimate incrementality."
-        )
-        low_stock = valid[valid["Stock Cover (weeks)"] < 3]
-        if not low_stock.empty:
-            st.warning(
-                "Inventory caution: "
-                + ", ".join(low_stock["Retail Account"].astype(str))
-                + " have less than 3 weeks of stock cover in this demo. "
-                "Validate replenishment before demand-driving activity."
+            st.text_area("Email draft — review before sending", email, height=310)
+            st.download_button(
+                "Download email draft", email,
+                file_name="beautykey_retailer_email.txt",
+                mime="text/plain"
             )
+            st.caption("Draft only. The app does not send emails.")
 
-with st.expander("View the underlying account data"):
-    display = df.copy()
-    for col in [
-        "Sales Growth (%)", "Target Attainment (%)", "Hero SKU Sales Growth (%)"
-    ]:
-        if col in display.columns:
-            display[col] = display[col].map(pct)
-    st.dataframe(display, use_container_width=True, hide_index=True)
+        else:
+            st.markdown("### Promotion assessment · evidence required")
+            st.write(
+                "Sales gaps alone do not establish whether a promotion will be profitable. "
+                "Before recommending spend, gather gross margin, promotional costs and funding, "
+                "expected incremental sell-through, baseline sales, stock on hand, and a way to estimate incrementality."
+            )
+            if target_row["Stock Cover (weeks)"] < 3:
+                st.warning("Stock cover is below 3 weeks. Validate replenishment before demand-driving activity.")
+            else:
+                st.info("No low-stock warning from the supplied stock-cover figure; inventory and profitability still need validation.")
 
-st.markdown("---")
-st.caption(
-    "BeautyKey AI prototype · fictional data only · human review required · "
-    "no retailer communications or external system updates are executed."
-)
+with t_data:
+    st.markdown(
+        "<div class='bk-section-title'>Data management & methodology</div>"
+        "<div class='bk-section-sub'>Understand the monthly refresh process, source fields and limitations.</div>",
+        unsafe_allow_html=True
+    )
+    st.markdown("""
+    #### Monthly refresh workflow
+    1. Export the latest approved account sales and target data.
+    2. Update the Excel workbook and check retailer names, periods, currency and missing values.
+    3. Upload the workbook using the sidebar.
+    4. Review the data and recommendations before acting on them.
+
+    #### Current prototype boundaries
+    - Data is read from a user-uploaded workbook or the embedded fictional demo dataset.
+    - The assistant uses rule-based logic; it is not connected to a live large language model.
+    - No automatic retrieval from retailer systems, CRM updates, email sending or external actions occur.
+    - Priority scores are illustrative heuristics, not a validated forecast.
+    - Recommendations require human review and additional context such as margin, sell-through, inventory and promotional costs.
+    """)
+
+    st.markdown("#### Account data")
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.download_button(
+        "Download current account dataset (CSV)",
+        df.to_csv(index=False).encode("utf-8"),
+        file_name="beautykey_account_data.csv",
+        mime="text/csv"
+    )
+
+# ---------- DISCLAIMER ----------
+st.markdown("""
+<div class='bk-disclaimer'>
+<b>Academic prototype disclaimer.</b>
+BeautyKey AI is an educational prototype developed for an academic project.
+All retailer, sales, product and performance data are fictional and created for
+demonstration purposes. The prototype is not affiliated with or endorsed by any real company.
+<br><br>
+BeautyKey AI · Retail Intelligence · Human review required · No external system actions are executed.
+</div>
+""", unsafe_allow_html=True)
