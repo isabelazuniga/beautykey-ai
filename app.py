@@ -110,46 +110,82 @@ with st.sidebar:
     st.markdown("<div class='bk-brand'><div class='bk-mark'>✦</div><div><div class='bk-wordmark'>BeautyKey</div><div class='bk-subbrand'>RETAIL INTELLIGENCE</div></div></div>", unsafe_allow_html=True)
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("<div class='bk-eyebrow'>WORKSPACE</div>", unsafe_allow_html=True)
-    reporting_period = st.text_input("Reporting period", "September 2026")
-    uploaded_file = st.file_uploader("Upload monthly Excel file", type=["xlsx"])
-    st.caption("Start with the demo data. Upload the BeautyKey Excel template when you are ready to refresh the month.")
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("**Data status**")
+    uploaded_file = st.file_uploader("Upload BeautyKey Excel workbook", type=["xlsx"])
+    st.caption("Upload the complete workbook to switch between historical months. Without an upload, the September demo is shown.")
+
+# Demo is the safe default. An uploaded workbook activates the real month selector.
+source = "Fictional demonstration dataset"
+df = pd.DataFrame(DEMO_DATA)
+reporting_period = "September 2026"
+with st.sidebar:
     if uploaded_file:
         st.success("Workbook selected")
     else:
         st.info("Using fictional demonstration data")
-    st.caption("No automatic data retrieval, CRM updates or emails are enabled.")
 
-# Load data
-source = "Fictional demonstration dataset"
-df = pd.DataFrame(DEMO_DATA)
 if uploaded_file:
     try:
         workbook = pd.ExcelFile(uploaded_file)
-        # Use the template's account targets plus transaction-level current sales.
-        if "Account Targets" in workbook.sheet_names:
-            uploaded_df = pd.read_excel(uploaded_file, sheet_name="Account Targets", header=2)
-            if "Current Sales" in workbook.sheet_names:
-                sales_sheet = pd.read_excel(uploaded_file, sheet_name="Current Sales", header=2)
-                sales_sheet = sales_sheet.rename(columns={"Net Sales (€)":"Current Month Sales (€)"})
-                if {"Retail Account", "Current Month Sales (€)"}.issubset(sales_sheet.columns):
-                    sales_sheet["Current Month Sales (€)"] = pd.to_numeric(sales_sheet["Current Month Sales (€)"], errors="coerce")
-                    sums = sales_sheet.groupby("Retail Account", as_index=False)["Current Month Sales (€)"].sum(min_count=1)
-                    uploaded_df = uploaded_df.drop(columns=["Current Net Sales (€)", "Current Month Sales (€)"], errors="ignore").merge(sums, on="Retail Account", how="left")
-            sheet_name = "Account Targets + Current Sales"
-        else:
-            st.sidebar.warning("This workbook does not contain the expected 'Account Targets' sheet. Use the BeautyKey template for best results.")
-            sheet_name = workbook.sheet_names[0]
-            uploaded_df = pd.read_excel(uploaded_file, sheet_name=sheet_name, header=0)
-        df, missing = prepare_data(uploaded_df)
-        if missing:
-            st.error("The uploaded workbook is missing required columns: " + ", ".join(missing) + ". Please use the BeautyKey template.")
+        if "Historical Sales" not in workbook.sheet_names:
+            st.error("This workbook does not contain a 'Historical Sales' sheet. Please upload the complete BeautyKey Excel template.")
             st.stop()
-        source = f"Uploaded workbook · {sheet_name}"
+        history = pd.read_excel(uploaded_file, sheet_name="Historical Sales", header=2)
+        needed_history = {"Reporting Month", "Retail Account", "Net Sales (€)", "Target (€)"}
+        if not needed_history.issubset(history.columns):
+            st.error("The 'Historical Sales' sheet is missing one or more required columns: Reporting Month, Retail Account, Net Sales (€), Target (€).")
+            st.stop()
+        history = history.copy()
+        history["Reporting Month"] = pd.to_datetime(history["Reporting Month"].astype(str), errors="coerce").dt.to_period("M")
+        history["Net Sales (€)"] = pd.to_numeric(history["Net Sales (€)"], errors="coerce")
+        history["Target (€)"] = pd.to_numeric(history["Target (€)"], errors="coerce")
+        history = history.dropna(subset=["Reporting Month", "Retail Account", "Net Sales (€)", "Target (€)"])
+        month_periods = sorted(history["Reporting Month"].unique())
+        if not month_periods:
+            st.error("No usable monthly records were found in 'Historical Sales'.")
+            st.stop()
+        month_labels = {str(m): m.strftime("%B %Y") for m in month_periods}
+        default_month = str(month_periods[-1])
+        with st.sidebar:
+            chosen_month = st.selectbox("Reporting period", options=[str(m) for m in month_periods], index=len(month_periods)-1, format_func=lambda m: month_labels[m])
+        selected_period = pd.Period(chosen_month, freq="M")
+        current = history[history["Reporting Month"] == selected_period].copy()
+        previous_period = selected_period - 1
+        previous = history[history["Reporting Month"] == previous_period][["Retail Account", "Net Sales (€)"]].rename(columns={"Net Sales (€)":"Previous Month Sales (€)"})
+        current = current.rename(columns={"Net Sales (€)":"Current Month Sales (€)", "Target (€)":"Monthly Target (€)"})
+        current = current.drop(columns=[c for c in ["Reporting Month", "Account ID", "Target Attainment (%)", "Gap to Target (€)", "Data Status"] if c in current.columns])
+        current = current.merge(previous, on="Retail Account", how="left")
+        current["Previous Month Sales (€)"] = current["Previous Month Sales (€)"].fillna(current["Current Month Sales (€)"])
+        # Account Targets contains current snapshot context (stock, hero SKU and notes), not historical snapshots.
+        if "Account Targets" in workbook.sheet_names:
+            snapshot = pd.read_excel(uploaded_file, sheet_name="Account Targets", header=2)
+            context_cols = [c for c in ["Retail Account", "Account Type", "Stock Cover (weeks)", "Hero SKU", "Hero SKU Growth (%)", "Planned Promotion?", "Priority Notes"] if c in snapshot.columns]
+            if "Retail Account" in context_cols:
+                snapshot = snapshot[context_cols].drop_duplicates(subset=["Retail Account"])
+                current = current.merge(snapshot, on="Retail Account", how="left")
+        current = current.rename(columns={"Hero SKU Growth (%)":"Hero SKU Sales Growth (%)", "Priority Notes":"Account Notes", "Planned Promotion?":"Promotion Planned?"})
+        if "Stock Cover (weeks)" not in current.columns:
+            current["Stock Cover (weeks)"] = 4.0
+        current["Stock Cover (weeks)"] = pd.to_numeric(current["Stock Cover (weeks)"], errors="coerce").fillna(4.0)
+        if "Hero SKU Sales Growth (%)" not in current.columns:
+            current["Hero SKU Sales Growth (%)"] = 0.0
+        current["Hero SKU Sales Growth (%)"] = pd.to_numeric(current["Hero SKU Sales Growth (%)"], errors="coerce").fillna(0.0)
+        if "Account Notes" not in current.columns:
+            current["Account Notes"] = "Review historical sales and validate account context."
+        if "Promotion Planned?" not in current.columns:
+            current["Promotion Planned?"] = "Unknown"
+        df, missing = prepare_data(current)
+        if missing:
+            st.error("The selected month is missing required fields: " + ", ".join(missing))
+            st.stop()
+        reporting_period = month_labels[chosen_month]
+        source = "Uploaded workbook · Historical Sales"
+        st.sidebar.caption("Historical sales and targets change by month. Stock cover and hero-SKU context come from the latest account snapshot in the workbook.")
     except Exception as exc:
-        st.error(f"Unable to read workbook. Please check that it is a valid .xlsx file using the BeautyKey template. Details: {exc}")
+        st.error(f"Unable to read the workbook. Please upload the complete BeautyKey .xlsx template. Details: {exc}")
         st.stop()
+else:
+    with st.sidebar:
+        reporting_period = st.selectbox("Reporting period", ["September 2026"], index=0, help="Upload the full Excel workbook to select historical months.")
 
 if df is None:
     st.stop()
@@ -160,7 +196,7 @@ if missing:
 df = df.dropna(subset=["Monthly Target (€)", "Current Month Sales (€)", "Previous Month Sales (€)"])
 df = df[df["Monthly Target (€)"] > 0]
 if df.empty:
-    st.error("No valid account rows found. Check the uploaded workbook.")
+    st.error("No valid account rows found for the selected month. Check the Historical Sales sheet.")
     st.stop()
 
 # Priority scoring is deliberately transparent and heuristic.
