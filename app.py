@@ -67,6 +67,19 @@ DEMO_DATA = [
     {"Retail Account":"Marionnaud Spain","Account Type":"Prestige beauty","Monthly Target (€)":25000,"Current Month Sales (€)":23750,"Previous Month Sales (€)":23000,"Stock Cover (weeks)":4,"Hero SKU":"Barrier Repair Cream","Hero SKU Sales Growth (%)":0.045,"Promotion Planned?":"No","Account Notes":"Close to target; opportunity to improve merchandising and staff education."},
 ]
 
+
+# Fictional promotion example used when no workbook is uploaded.
+DEMO_PROMOTIONS = pd.DataFrame([{
+    "Reporting Month":"2026-10", "Retail Account":"Perfume's Club", "Product":"Retinol Night Serum",
+    "Mechanic":"Online promotional offer", "Discount Rate":0.20, "Expected Incremental Units":160,
+    "Retailer Funding (€)":500, "Brand Funding (€)":1500, "Baseline Units":310,
+    "Expected Brand Gross Profit (€)":float("nan"), "Status":"Under review",
+    "Decision Notes":"Declining sales; validate stock, margin, traffic and expected incremental units before approval."
+}])
+promotions_df = DEMO_PROMOTIONS.copy()
+product_master_df = pd.DataFrame()
+inventory_df = pd.DataFrame()
+
 REQUIRED = ["Retail Account", "Monthly Target (€)", "Current Month Sales (€)", "Previous Month Sales (€)", "Stock Cover (weeks)"]
 
 def prepare_data(frame):
@@ -126,6 +139,29 @@ with st.sidebar:
 if uploaded_file:
     try:
         workbook = pd.ExcelFile(uploaded_file)
+        if "Promotions" in workbook.sheet_names:
+            try:
+                promotions_df = pd.read_excel(uploaded_file, sheet_name="Promotions", header=2)
+                for numeric_col in ["Discount Rate", "Expected Incremental Units", "Retailer Funding (€)", "Brand Funding (€)", "Baseline Units", "Expected Brand Gross Profit (€)"]:
+                    if numeric_col in promotions_df.columns:
+                        promotions_df[numeric_col] = pd.to_numeric(promotions_df[numeric_col], errors="coerce")
+            except Exception:
+                promotions_df = DEMO_PROMOTIONS.copy()
+        if "Product Master" in workbook.sheet_names:
+            try:
+                product_master_df = pd.read_excel(uploaded_file, sheet_name="Product Master", header=2)
+                if "Gross Margin Rate" in product_master_df.columns:
+                    product_master_df["Gross Margin Rate"] = pd.to_numeric(product_master_df["Gross Margin Rate"], errors="coerce")
+            except Exception:
+                product_master_df = pd.DataFrame()
+        if "Inventory" in workbook.sheet_names:
+            try:
+                inventory_df = pd.read_excel(uploaded_file, sheet_name="Inventory", header=2)
+                for numeric_col in ["On-hand Units", "Avg Weekly Units Sold", "Stock Cover (weeks)", "Reorder Threshold (weeks)"]:
+                    if numeric_col in inventory_df.columns:
+                        inventory_df[numeric_col] = pd.to_numeric(inventory_df[numeric_col], errors="coerce")
+            except Exception:
+                inventory_df = pd.DataFrame()
         if "Historical Sales" not in workbook.sheet_names:
             st.error("This workbook does not contain a 'Historical Sales' sheet. Please upload the complete BeautyKey Excel template.")
             st.stop()
@@ -287,7 +323,7 @@ with t_opportunities:
     st.download_button("Export opportunity review (CSV)", opportunity_table.to_csv(index=False).encode("utf-8"), file_name="beautykey_opportunity_review.csv", mime="text/csv")
 
 with t_assistant:
-    st.markdown("<div class='bk-section-title'>Action studio</div><div class='bk-section-sub'>Create a practical action plan or retailer email from the account data. Nothing is sent automatically.</div>", unsafe_allow_html=True)
+    st.markdown("<div class='bk-section-title'>Action studio</div><div class='bk-section-sub'>Create a practical action plan, retailer email or conditional promotion-investment assessment from the uploaded data. Nothing is sent or approved automatically.</div>", unsafe_allow_html=True)
     task = st.selectbox("What would you like to prepare?", ["Summarize the top three opportunities", "Build a 30-day action plan", "Draft a retailer business-review email", "Assess whether to run a promotion"])
     chosen = st.selectbox("Account context", ["Highest-priority account"] + account_options)
     if chosen == "Highest-priority account":
@@ -313,12 +349,78 @@ with t_assistant:
             st.download_button("Download email draft", email, file_name="beautykey_retailer_email.txt", mime="text/plain")
             st.caption("Draft only. The app does not send emails.")
         else:
-            st.markdown("### Promotion assessment · evidence required")
-            st.write("Sales gaps alone do not establish whether a promotion will be profitable. Before recommending spend, gather gross margin, promotional costs and funding, expected incremental sell-through, baseline sales, stock on hand, and a way to estimate incrementality.")
-            if target_row["Stock Cover (weeks)"] < 3:
-                st.warning("Stock cover is below 3 weeks. Validate replenishment before any demand-driving activity.")
+            st.markdown("### Promotion investment assessment")
+            st.caption("Rule-based decision support. Forecasts are hypotheses, not guaranteed incremental results or proof of profitability.")
+            if promotions_df.empty or "Retail Account" not in promotions_df.columns:
+                st.warning("No usable Promotions sheet was found. Upload the complete workbook to assess planned commercial activity.")
             else:
-                st.info("No low-stock warning from the supplied stock-cover figure; inventory and profitability still need validation.")
+                account_promos = promotions_df[promotions_df["Retail Account"].astype(str).str.strip() == str(target_row["Retail Account"]).strip()].copy()
+                if "Status" in account_promos.columns:
+                    open_promos = account_promos[account_promos["Status"].astype(str).str.lower().isin(["planned", "under review", "on hold", "pending"])]
+                    if not open_promos.empty:
+                        account_promos = open_promos
+                if account_promos.empty:
+                    st.info(f"No planned promotion was found for {target_row['Retail Account']} in the Promotions sheet. The app will not invent a promotion recommendation.")
+                else:
+                    if "Reporting Month" in account_promos.columns:
+                        account_promos["_month"] = pd.to_datetime(account_promos["Reporting Month"].astype(str), errors="coerce")
+                        account_promos = account_promos.sort_values("_month", na_position="last")
+                    promo = account_promos.iloc[0]
+                    product = str(promo.get("Product", "the selected product"))
+                    discount = promo.get("Discount Rate", float("nan"))
+                    incr_units = promo.get("Expected Incremental Units", float("nan"))
+                    baseline_units = promo.get("Baseline Units", float("nan"))
+                    brand_funding = promo.get("Brand Funding (€)", float("nan"))
+                    retailer_funding = promo.get("Retailer Funding (€)", float("nan"))
+                    expected_gp = promo.get("Expected Brand Gross Profit (€)", float("nan"))
+                    status = str(promo.get("Status", "Status not provided"))
+                    col_a, col_b, col_c = st.columns(3)
+                    col_a.metric("Proposed discount", f"{discount:.0%}" if pd.notna(discount) else "Not provided")
+                    col_b.metric("Brand funding", money(brand_funding))
+                    col_c.metric("Expected incremental units", f"{incr_units:,.0f}" if pd.notna(incr_units) else "Not provided")
+                    st.write(f"**Promotion:** {product} · {promo.get('Mechanic', 'Mechanic not provided')} · **Status:** {status}")
+                    sku_id = str(promo.get("SKU ID", "")).strip()
+                    if not inventory_df.empty and {"Retail Account", "SKU ID"}.issubset(inventory_df.columns) and sku_id and sku_id.lower() != "nan":
+                        sku_stock = inventory_df[(inventory_df["Retail Account"].astype(str).str.strip() == str(target_row["Retail Account"]).strip()) & (inventory_df["SKU ID"].astype(str).str.strip() == sku_id)]
+                        if not sku_stock.empty:
+                            stock = sku_stock.iloc[-1]
+                            stock_cols = st.columns(3)
+                            stock_cols[0].metric("SKU units on hand", f"{stock.get('On-hand Units', float('nan')):,.0f}" if pd.notna(stock.get("On-hand Units", float("nan"))) else "Not provided")
+                            stock_cols[1].metric("SKU stock status", str(stock.get("Availability Status", "Unknown")))
+                            stock_cols[2].metric("Weekly unit sales", f"{stock.get('Avg Weekly Units Sold', float('nan')):,.0f}" if pd.notna(stock.get("Avg Weekly Units Sold", float("nan"))) else "Not provided")
+                            if str(stock.get("Availability Status", "")).strip().lower() in ["watch", "low", "critical"]:
+                                st.warning(f"SKU-level inventory is flagged as '{stock.get('Availability Status')}'. Resolve availability before approving demand-driving activity.")
+                    if not product_master_df.empty and "Product" in product_master_df.columns:
+                        product_ref = product_master_df[product_master_df["Product"].astype(str).str.strip() == product]
+                        if not product_ref.empty:
+                            ref = product_ref.iloc[0]
+                            if pd.notna(ref.get("Gross Margin Rate", float("nan"))):
+                                st.write(f"Product Master gross-margin reference: {ref['Gross Margin Rate']:.0%}. This is a reference input, not a promotion-level profit calculation; confirm how the discount and funding affect net contribution.")
+                    if pd.notna(baseline_units) and pd.notna(incr_units) and baseline_units > 0:
+                        st.write(f"The plan assumes {incr_units:,.0f} incremental units against a baseline of {baseline_units:,.0f} units ({incr_units / baseline_units:.1%} of baseline). This is a planning assumption, not verified uplift.")
+                    sales_growth = target_row.get("Sales Growth (%)", float("nan"))
+                    st.markdown("#### Decision logic")
+                    if pd.notna(sales_growth) and sales_growth < 0:
+                        st.write(f"The account is declining month-on-month ({sales_growth:.1%}) and is {pct_plain(target_row['Target Attainment (%)'])} of target. That makes the promotion worth assessing—but does not prove a discount is the right solution.")
+                    missing_economics = []
+                    if pd.isna(expected_gp): missing_economics.append("expected brand gross profit after promotional costs")
+                    if pd.isna(discount): missing_economics.append("discount rate")
+                    if pd.isna(brand_funding): missing_economics.append("brand funding")
+                    if pd.isna(incr_units): missing_economics.append("expected incremental units")
+                    if missing_economics:
+                        st.error("RECOMMENDATION: HOLD FOR VALIDATION. The financial case is incomplete: " + ", ".join(missing_economics) + ".")
+                    else:
+                        st.warning("RECOMMENDATION: DO NOT AUTO-APPROVE. Validate the expected gross profit and incremental-sales assumptions against the funding and discount before committing spend.")
+                    if pd.notna(expected_gp):
+                        net_after_funding = expected_gp - (brand_funding if pd.notna(brand_funding) else 0)
+                        st.write(f"Workbook-reported expected brand gross profit: {money(expected_gp)}. After brand funding alone: {money(net_after_funding)}. Confirm whether the workbook's gross-profit estimate already accounts for discounts and other costs to avoid double counting.")
+                    st.markdown("**Required checks before approval**")
+                    st.markdown("1. Confirm stock availability for the promoted SKU and the promotion dates.\n2. Validate net price, gross margin, discount funding and expected brand contribution.\n3. Agree how incremental units will be measured against a baseline.\n4. Set a minimum contribution hurdle and post-promotion review date.")
+                    st.info("Decision owner: account manager / commercial finance. BeautyKey prepares the evidence and conditional recommendation; it does not approve spend.")
+                    st.markdown("#### Suggested next action")
+                    st.write(f"Request a margin-and-incrementality check for {product}; keep the promotion under review until the financial hurdle is documented. If the hurdle passes and stock is sufficient, approve a controlled test and compare actual incremental contribution with the agreed baseline.")
+                    if target_row["Stock Cover (weeks)"] < 3:
+                        st.warning("Account-level stock cover is below 3 weeks. Confirm SKU-level stock before any demand-driving activity; account-level stock cover may not represent this specific product.")
 
 with t_data:
     st.markdown("<div class='bk-section-title'>Data management & methodology</div><div class='bk-section-sub'>Understand the monthly refresh process, source fields and limitations.</div>", unsafe_allow_html=True)
